@@ -1,0 +1,34 @@
+{
+  "name": "pdf-app",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc",
+    "format": "prettier --write **/*.ts",
+    "format-check": "prettier --check **/*.ts",
+    "pre-checkin": "npm run format && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hengkx/pdf-app.git"
+  },
+  "keywords": [],
+  "author": "hengkx",
+  "license": "MIT",
+  "files": [
+    "bin",
+    "lib",
+    "jar"
+  ],
+  "dependencies": {
+    "glob": "^7.1.6",
+    "sharp": "^0.27.0"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/node": "^14.14.16",
+    "@types/sharp": "^0.26.1",
+    "prettier": "^2.2.1",
+    "typescript": "^4.1.3"
+  }
+}

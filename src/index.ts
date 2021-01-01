@@ -1,7 +1,8 @@
+import fs from 'fs-extra';
 import { exec } from 'child_process';
 import { basename, join } from 'path';
 import glob from 'glob';
-import sharp from 'sharp';
+import sharp, { Sharp } from 'sharp';
 
 function execute(command: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
@@ -19,10 +20,15 @@ function execute(command: string): Promise<boolean> {
 const prevCmd = `java -jar ${join(__dirname, '..', 'jar', 'pdfbox-app-2.0.22.jar')}`;
 
 export function pdfMerge(source: string[], dest: string) {
-  return execute(`${prevCmd} PDFMerger ${source.join(' ')} ${dest}`);
+  if (source.length > 1) {
+    return execute(`${prevCmd} PDFMerger ${source.join(' ')} ${dest}`);
+  }
+  if (source.length === 1) {
+    return fs.copyFileSync(source[0], dest);
+  }
 }
 
-export async function imageMerge(source: string[], dest: string) {
+export async function imageMerge(source: string[]): Promise<Sharp> {
   let imageData: any[] = [];
   let offsetY = 0;
   let maxWidth = 0;
@@ -40,10 +46,9 @@ export async function imageMerge(source: string[], dest: string) {
       width: maxWidth,
     },
   });
-  const res = await imageBase
-    .composite(imageData.map((item) => ({ input: item.buffer, left: 0, top: item.offsetY })))
-    .toFile(dest);
-  return res;
+  return imageBase.composite(
+    imageData.map((item) => ({ input: item.buffer, left: 0, top: item.offsetY })),
+  );
 }
 
 function globPromise(pattern: string): Promise<string[]> {
@@ -57,13 +62,21 @@ function globPromise(pattern: string): Promise<string[]> {
   });
 }
 
-export async function pdfToImage(source: string, dest?: string) {
-  await execute(`${prevCmd} PDFToImage ${source}`);
-  const name = basename(source.toLowerCase(), '.pdf');
-  const files = await globPromise(`${name}*.jpg`);
-  if (dest) {
-    await imageMerge(files, dest);
-    return dest;
+export async function pdfToImage(source: string | string[]): Promise<Sharp> {
+  let pdfFile = '';
+  if (Array.isArray(source)) {
+    pdfFile = `temp${Date.now()}.pdf`;
+    await pdfMerge(source, pdfFile);
+  } else {
+    pdfFile = source;
   }
-  return files;
+  await execute(`${prevCmd} PDFToImage ${pdfFile}`);
+  const name = basename(pdfFile.toLowerCase(), '.pdf');
+  const files = await globPromise(join(pdfFile, '..', `${name}*.jpg`));
+  const res = await imageMerge(files);
+  files.forEach((item) => fs.removeSync(item));
+  if (Array.isArray(source)) {
+    fs.removeSync(pdfFile);
+  }
+  return res;
 }

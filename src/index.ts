@@ -62,7 +62,7 @@ function globPromise(pattern: string): Promise<string[]> {
   });
 }
 
-export async function pdfToImage(source: string | string[]): Promise<Sharp> {
+export async function pdfToImage(source: string | string[], dpi = 96): Promise<Sharp> {
   let pdfFile = '';
   if (Array.isArray(source)) {
     pdfFile = `temp${Date.now()}.pdf`;
@@ -70,7 +70,7 @@ export async function pdfToImage(source: string | string[]): Promise<Sharp> {
   } else {
     pdfFile = source;
   }
-  await execute(`${prevCmd} PDFToImage ${pdfFile}`);
+  await execute(`${prevCmd} PDFToImage -dpi ${dpi} ${pdfFile}`);
   const name = basename(pdfFile.toLowerCase(), '.pdf');
   const files = await globPromise(join(pdfFile, '..', `${name}*.jpg`));
   const res = await imageMerge(files);
